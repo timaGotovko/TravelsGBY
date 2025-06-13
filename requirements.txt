@@ -1,5 +1,5 @@
 aiogram==3.4.1
 aiohttp==3.9.5
-openai==1.12.0
+openai
 python-dotenv==1.0.1
 requests>=2.31.0         # если используешь setWebhook вручную
