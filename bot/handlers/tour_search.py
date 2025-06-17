@@ -33,8 +33,12 @@ async def ask_country_callback(call: CallbackQuery, state: FSMContext):
 async def handle_country_selection(call: CallbackQuery, state: FSMContext):
     country_name = call.data.replace("country_", "")
     country_id = COUNTRIES[country_name]["id"]
-    await state.update_data(countryId=country_id)
-    await call.message.edit_text(f"✅ Страна выбрана: {country_name}")
+    await state.update_data(countryId=country_id, countryName=country_name)
+    # await call.message.edit_text(f"✅ Страна выбрана: {country_name}")
+    try:
+        await call.message.delete()
+    except Exception as e:
+        print(f"[ERROR] Не удалось удалить сообщение: {e}")
     msg = await call.message.answer("📅 Введите диапазон дат когда вы хотите вылететь в формате ДД.ММ.ГГГГ - ДД.ММ.ГГГГ:")
     await state.update_data(prompt_id=msg.message_id)
     await state.set_state(TourSearchState.date)
@@ -94,7 +98,7 @@ async def ask_nights_range(message: Message, state: FSMContext):
     except Exception as e:
         print(f"[ERROR] call.answer() failed: {e}")
 
-    await message.answer(f"📅 Вы выбрали даты отправления: <b>{date_from_str}</b> – <b>{date_to_str}</b>")
+    # await message.answer(f"📅 Вы выбрали даты отправления: <b>{date_from_str}</b> – <b>{date_to_str}</b>")
     msg = await message.answer("🏨 Введите диапазон ночей  (например, 7-12):")
     await state.update_data(prompt_id=msg.message_id)
     await state.set_state(TourSearchState.nights)
@@ -126,7 +130,7 @@ async def ask_adults(message: Message, state: FSMContext):
     except Exception as e:
         print(f"[ERROR] call.answer() failed: {e}")
 
-    await message.answer(f"🌙 Вы выбрали продолжительность: <b>{nights_min}–{nights_max}</b> ночей")
+    # await message.answer(f"🌙 Вы выбрали продолжительность: <b>{nights_min}–{nights_max}</b> ночей")
     msg = await message.answer("👥 Укажите количество взрослых:")
     await state.update_data(prompt_id=msg.message_id)
     await state.set_state(TourSearchState.people)
@@ -158,7 +162,7 @@ async def ask_kids(message: Message, state: FSMContext):
     except Exception as e:
         print(f"[ERROR] call.answer() failed: {e}")
 
-    await message.answer(f"👥 Взрослых: <b>{adults}</b>")
+    # await message.answer(f"👥 Взрослых: <b>{adults}</b>")
     msg = await message.answer("🧒 Укажите количество детей (0, если нет):")
     await state.update_data(prompt_id=msg.message_id)
     await state.set_state(TourSearchState.kids)
@@ -190,7 +194,7 @@ async def ask_price(message: Message, state: FSMContext):
     except Exception as e:
         print(f"[ERROR] call.answer() failed: {e}")
 
-    await message.answer(f"🧒 Детей: <b>{kids}</b>")
+    # await message.answer(f"🧒 Детей: <b>{kids}</b>")
     msg = await message.answer("💵 Укажите максимальную сумму в долларах:", reply_markup=price_keyboard())
     await state.update_data(prompt_id=msg.message_id)
     await state.set_state(TourSearchState.priceMax)
@@ -200,10 +204,25 @@ async def ask_price(message: Message, state: FSMContext):
 async def handle_price_selection(call: CallbackQuery, state: FSMContext):
     price_text = call.data.replace("price_", "")
     price_value = 999999 if price_text == "3000+" else int(price_text)
-
-    await call.message.edit_text(f"💵 Максимальный бюджет: <b>{price_text} USD</b>\n ⌛ Мы подбираем для вас идеальный тур.\n При большой нагрузке поиск может занимать около 1 минут❣️")         
+    # "💵 Максимальный бюджет: <b>{price_text} USD</b>\n 
+    # await call.message.edit_text(f"⌛ Мы подбираем для вас идеальный тур.\n При большой нагрузке поиск может занимать около 1 минут❣️")         
     await state.update_data(priceMax=price_value)
     data = await state.get_data()
+
+    summary = (
+    f"⌛ Мы подбираем для вас идеальный тур по вашим параметрам.\n При большой нагрузке поиск может занимать около 1 минут❣️\n"
+    f"✅ <b>Выбранные параметры:</b>\n"
+    f"🌍 Страна: {data.get('countryName', '—')}\n"
+    f"💥Город отправления: Минск\n"
+    f"📅 Даты: {data.get('dateFrom')} – {data.get('dateTo')}\n"
+    f"🌙 Ночи: {data.get('nightsMin')}–{data.get('nightsMax')}\n"
+    f"👥 Взрослых: {data.get('adults')}, Детей: {data.get('kids')}\n"
+    f"💵 Бюджет: {price_text} USD\n\n"
+    f"⌛ Ищем туры, подождите..."
+    )
+
+    await call.message.edit_text(summary)
+
 
     params = build_tour_params(data) # Параметры туров
 
@@ -320,9 +339,14 @@ async def handle_resort_selection(call: CallbackQuery, state: FSMContext):
             ),
             "Город"
         )
-        await call.message.edit_text(f"🏙️ Фильтр по городу: {resort_name}")
+        await state.update_data(resorts=resort_id, resortName=resort_name)
     else:
-        await call.message.edit_text("✅ Фильтр по городу: не выбран")
+        await state.update_data(resorts=None, resortName=None)
+
+    try:
+        await call.message.delete()
+    except Exception as e:
+        print(f"[ERROR] Не удалось удалить клавиатуру с городами: {e}")
 
     # Переход к выбору категории отеля
     await call.message.answer("🏨 Выберите категорию отеля:", reply_markup=hotel_category_keyboard())
@@ -337,12 +361,31 @@ async def handle_hotel_category(call: CallbackQuery, state: FSMContext):
             (c["name"] for c in HOTEL_CATEGORIES if str(c["id"]) == cat_id),
             "Неизвестно"
         )
-        await call.message.edit_text(f"💫 Категория отеля выбрана: {category_name} ")
+        await state.update_data(hotelCategories=cat_id, hotelCategoryName=category_name)
     else:
-        await state.update_data(hotelCategories=None)
-        await call.message.edit_text("✅ Категория отеля не выбрана.")
+        await state.update_data(hotelCategories=None, hotelCategoryName=None)
+
+    try:
+        await call.message.delete()
+    except Exception as e:
+        print(f"[ERROR] Не удалось удалить клавиатуру со звездами: {e}")
 
     data = await state.get_data()
+    summary = (
+    f"⌛ Мы подбираем для вас идеальный тур по расширенным параметрам.\n При большой нагрузке поиск может занимать около 1 минут❣️\n"
+    f"✅ <b>Параметры для фильтрации:</b>\n"
+    f"🌍 Страна: {data.get('countryName', '—')}\n"
+    f"💥Город отправления: Минск\n"
+    f"📅 Даты: {data.get('dateFrom')} – {data.get('dateTo')}\n"
+    f"🌙 Ночи: {data.get('nightsMin')}–{data.get('nightsMax')}\n"
+    f"👥 Взрослых: {data.get('adults')}, Детей: {data.get('kids')}\n"
+    f"🏙️ Город: {data.get('resortName', '—')}\n"
+    f"💫 Категория отеля: {data.get('hotelCategoryName', '—')}\n"
+    f"💵 Бюджет: {data.get('priceMax', '—')} USD\n\n"
+    f"⌛ Ищем туры по дополнительным параметрам..."
+    )
+
+    await call.message.answer(summary)  
 
     params = build_tour_params(data) # Параметры
 
