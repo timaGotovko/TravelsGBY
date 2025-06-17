@@ -7,7 +7,7 @@ def build_tour_params(data: dict) -> dict:
         "countryId": data.get("countryId"),
         "dateFrom": data.get("dateFrom"),
         "dateTo": data.get("dateTo"),
-        "departCityId": 448,
+        "departCityId": data.get("departCityId"),
         "ticketsIncluded": 1,
         "nightsMin": data.get("nightsMin"),
         "nightsMax": data.get("nightsMax"),

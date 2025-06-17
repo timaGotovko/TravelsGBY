@@ -7,26 +7,24 @@ from bot.services.tour_api import search_tours_to_file
 from bot.keyboards.main import main_keyboard
 import re
 from datetime import datetime, date
-from bot.keyboards.main import country_keyboard
+from bot.keyboards.main import country_keyboard, country_keyboard_for_Moskov
 from bot.constants.countries import COUNTRIES
 from bot.keyboards.price_keyboard import price_keyboard
 from bot.keyboards.city_keyboard import generate_city_keyboard
 from bot.keyboards.hotel_category_keyboard import hotel_category_keyboard
 from bot.keyboards.hotel_category_keyboard import HOTEL_CATEGORIES
 from bot.utils.tour_utils import build_tour_params
+from bot.keyboards.departure_city_keyboard import departure_city_keyboard
 
 
 router = Router()
 user_tour_results = {}
 
 @router.callback_query(F.data == "tours")
-async def ask_country_callback(call: CallbackQuery, state: FSMContext):
-    await call.message.edit_text("🌍 Выберите страну по кнопке ниже:", reply_markup=country_keyboard())
-    await state.set_state(TourSearchState.country)
-    try:
-        await call.answer()
-    except Exception as e:
-     print(f"[ERROR] call.answer() failed: {e}")
+async def ask_departure_city(call: CallbackQuery, state: FSMContext):
+    await call.message.edit_text("🛫 Выберите город вылета:", reply_markup=departure_city_keyboard())
+    await state.set_state(TourSearchState.departure_city)
+
 
 
 @router.callback_query(F.data.startswith("country_"))
@@ -46,6 +44,36 @@ async def handle_country_selection(call: CallbackQuery, state: FSMContext):
         await call.answer()
     except Exception as e:
         print(f"[ERROR] call.answer() failed: {e}")
+
+@router.callback_query(F.data.startswith("dep_"))
+async def handle_departure_city(call: CallbackQuery, state: FSMContext):
+    city_id = int(call.data.replace("dep_", ""))
+    city_name = {
+        448: "Минск",
+        1: "Москва",
+    }.get(city_id, "Город")
+
+    await state.update_data(departCityId=city_id, departCityName=city_name)
+
+    try:
+        await call.message.delete()
+    except:
+        pass
+
+    # 👇 Выбор нужной клавиатуры
+    if city_id == 1:  # Москва
+        keyboard = country_keyboard_for_Moskov()
+    else:  # Минск и всё остальное по умолчанию
+        keyboard = country_keyboard()
+
+    await call.message.answer("🌍 Выберите страну по кнопке ниже:", reply_markup=keyboard)
+    await state.set_state(TourSearchState.country)
+
+    try:
+        await call.answer()
+    except Exception as e:
+        print(f"[ERROR] call.answer() failed: {e}")
+
 
 
 @router.message(TourSearchState.date)
@@ -213,7 +241,7 @@ async def handle_price_selection(call: CallbackQuery, state: FSMContext):
     f"⌛ Мы подбираем для вас идеальный тур по вашим параметрам.\n При большой нагрузке поиск может занимать около 1 минут❣️\n"
     f"✅ <b>Выбранные параметры:</b>\n"
     f"🌍 Страна: {data.get('countryName', '—')}\n"
-    f"💥Город отправления: Минск\n"
+    f"💥Город отправления: {data.get('departCityName', '—')}\n"
     f"📅 Даты: {data.get('dateFrom')} – {data.get('dateTo')}\n"
     f"🌙 Ночи: {data.get('nightsMin')}–{data.get('nightsMax')}\n"
     f"👥 Взрослых: {data.get('adults')}, Детей: {data.get('kids')}\n"
@@ -227,6 +255,9 @@ async def handle_price_selection(call: CallbackQuery, state: FSMContext):
     params = build_tour_params(data) # Параметры туров
 
     tours = await search_tours_to_file(params, output_file="all_tours.json")
+
+    for tour in tours:
+        tour["departCityName"] = data.get("departCityName", "—")
 
     if not tours:
         markup = InlineKeyboardMarkup(inline_keyboard=[
@@ -251,11 +282,13 @@ async def send_tour_info(message: Message, tour: dict, index: int, total: int):
     text = (
         f"🏖 <b>Тур {index + 1} из {total}</b>\n"
         f"🌍 <b>Страна:</b> {tour.get('countryName', '—')}\n"
+        f"💥Город отправления: {tour.get('departCityName', '—')}\n"
         f"🏨 <b>Отель:</b> {tour.get('hotelName', '—')}\n"
         f"🏙 <b>Город:</b> {tour.get('resortName', '—')}\n"
         f"📅 <b>Даты:</b> {tour.get('tourDate', '—')} → {tour.get('tourEndDate', '—')}\n"
         f"🔗 <b>Ссылка:</b> {tour.get('hotelUrl') or tour.get('tourUrl', '—')}\n"
-        f"💰 <b>Цена:</b> {tour.get('price', '—')} USD"
+        f"💰 <b>Цена:</b> {tour.get('price', '—')} USD *\n"
+        f"* Цены могут немного отличаться. Точную стоимость подтверждает менеджер при бронировании."
     )
 
     markup = InlineKeyboardMarkup(inline_keyboard=[
@@ -375,7 +408,7 @@ async def handle_hotel_category(call: CallbackQuery, state: FSMContext):
     f"⌛ Мы подбираем для вас идеальный тур по расширенным параметрам.\n При большой нагрузке поиск может занимать около 1 минут❣️\n"
     f"✅ <b>Параметры для фильтрации:</b>\n"
     f"🌍 Страна: {data.get('countryName', '—')}\n"
-    f"💥Город отправления: Минск\n"
+    f"💥Город отправления: {data.get('departCityName', '—')}\n"
     f"📅 Даты: {data.get('dateFrom')} – {data.get('dateTo')}\n"
     f"🌙 Ночи: {data.get('nightsMin')}–{data.get('nightsMax')}\n"
     f"👥 Взрослых: {data.get('adults')}, Детей: {data.get('kids')}\n"
@@ -392,6 +425,9 @@ async def handle_hotel_category(call: CallbackQuery, state: FSMContext):
     print("🔍 Отправка с параметрами:", params)
 
     tours = await search_tours_to_file(params, output_file="all_tours.json")
+
+    for tour in tours:
+        tour["departCityName"] = data.get("departCityName", "—")
 
     if not tours:
         markup = InlineKeyboardMarkup(inline_keyboard=[

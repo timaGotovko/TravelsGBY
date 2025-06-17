@@ -86,6 +86,7 @@ async def get_username(message: Message, state: FSMContext):
         f"🔗 Username: @{data['username']}\n"
         f"🏨 Отель: {tour_info.get('hotelName', '—')}\n"
         f"🌍 Страна: {tour_info.get('countryName', '—')}\n"
+        f"💥Город отправления: {tour_info.get('departCityName', '—')}\n"
         f"📅 Даты тура: {tour_info.get('tourDate', '—')} → {tour_info.get('tourEndDate', '—')}\n"
         f"💰 Цена: {tour_info.get('price', '—')} USD\n"
         f"🔗 Ссылка: {tour_info.get('tourUrl', '—')}"

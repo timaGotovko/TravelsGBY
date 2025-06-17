@@ -1,7 +1,8 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from bot.constants.countries import COUNTRIES
+from bot.constants.countries import COUNTRIES, COUNTRIESFORMOSKOV
+
 
 def country_keyboard():
     keyboard = []
@@ -14,6 +15,20 @@ def country_keyboard():
     if row:
         keyboard.append(row)
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def country_keyboard_for_Moskov():
+    keyboard = []
+    row = []
+    for i, name in enumerate(COUNTRIESFORMOSKOV.keys()):
+        row.append(InlineKeyboardButton(text=name, callback_data=f"country_{name}"))
+        if len(row) == 3:  # 3 кнопки в строке
+            keyboard.append(row)
+            row = []
+    if row:
+        keyboard.append(row)
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
 
 share_contact_keyboard = ReplyKeyboardMarkup(
     keyboard=[
