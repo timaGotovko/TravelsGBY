@@ -17,9 +17,13 @@ dp = Dispatcher(storage=MemoryStorage())
 dp.include_routers(start.router, gpt_chat.router, tour_search.router, booking.router)
 
 async def handle_webhook(request):
-    update = await request.json()
-    await dp.feed_update(bot=bot, update=update)
+    try:
+        update = await request.json()
+        await dp.feed_update(bot, update)
+    except Exception as e:
+        print(f"[Webhook Error] {e}")
     return web.Response()
+
 
 async def on_startup(app):
     await bot.set_webhook(WEBHOOK_URL)
