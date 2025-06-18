@@ -6,6 +6,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.client.default import DefaultBotProperties
 from bot.config import BOT_TOKEN
 from bot.handlers import start, gpt_chat, tour_search, booking
+from aiogram.types import Update  # не забудь импортировать вверху
 
 WEBHOOK_PATH = "/webhook"
 WEBHOOK_URL = os.getenv("WEBHOOK_URL") + WEBHOOK_PATH
@@ -17,12 +18,11 @@ dp = Dispatcher(storage=MemoryStorage())
 dp.include_routers(start.router, gpt_chat.router, tour_search.router, booking.router)
 
 async def handle_webhook(request):
-    try:
-        update = await request.json()
-        await dp.feed_update(bot, update)
-    except Exception as e:
-        print(f"[Webhook Error] {e}")
+    raw_data = await request.json()
+    update = Update.model_validate(raw_data)
+    await dp.feed_update(bot=bot, update=update)
     return web.Response()
+
 
 
 async def on_startup(app):
