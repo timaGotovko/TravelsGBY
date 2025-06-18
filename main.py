@@ -21,8 +21,12 @@ dp.include_routers(start.router, gpt_chat.router, tour_search.router, booking.ro
 
 
 async def on_startup(app: web.Application):
-    await bot.set_webhook(WEBHOOK_URL)
+    await bot.set_webhook(
+        url=WEBHOOK_URL,
+        allowed_updates=["message", "callback_query"]
+    )
     print(f"🚀 Webhook установлен: {WEBHOOK_URL}")
+
 
 
 async def on_shutdown(app: web.Application):
@@ -53,3 +57,8 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+# git add .
+# git commit -m "Обновление проекта"
+# git push origin main
