@@ -1,37 +1,47 @@
 import asyncio
 import os
+from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.client.default import DefaultBotProperties
 from bot.config import BOT_TOKEN
 from bot.handlers import start, gpt_chat, tour_search, booking
-from aiogram.client.default import DefaultBotProperties
 
 WEBHOOK_PATH = "/webhook"
 WEBHOOK_URL = os.getenv("WEBHOOK_URL") + WEBHOOK_PATH
 WEBAPP_HOST = "0.0.0.0"
 WEBAPP_PORT = int(os.getenv("PORT", 8000))
 
-async def on_startup(bot: Bot):
+bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
+dp = Dispatcher(storage=MemoryStorage())
+dp.include_routers(start.router, gpt_chat.router, tour_search.router, booking.router)
+
+async def handle_webhook(request):
+    update = await request.json()
+    await dp.feed_update(bot=bot, update=update)
+    return web.Response()
+
+async def on_startup(app):
     await bot.set_webhook(WEBHOOK_URL)
 
-async def on_shutdown(bot: Bot):
+async def on_shutdown(app):
     await bot.delete_webhook()
 
 async def main():
-    bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
-    dp = Dispatcher(storage=MemoryStorage())
+    app = web.Application()
+    app.router.add_post(WEBHOOK_PATH, handle_webhook)
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
 
-    dp.include_routers(start.router, gpt_chat.router, tour_search.router, booking.router)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, host=WEBAPP_HOST, port=WEBAPP_PORT)
+    await site.start()
 
-    await dp.start_webhook(
-        webhook_path=WEBHOOK_PATH,
-        on_startup=on_startup,
-        on_shutdown=on_shutdown,
-        skip_updates=True,
-        host=WEBAPP_HOST,
-        port=WEBAPP_PORT,
-        bot=bot,
-    )
+    print(f"🌐 Webhook запущен на {WEBAPP_HOST}:{WEBAPP_PORT}")
+
+    # Keep the service running
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
     asyncio.run(main())
