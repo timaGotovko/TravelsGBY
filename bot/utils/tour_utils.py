@@ -13,8 +13,13 @@ def build_tour_params(data: dict) -> dict:
         "nightsMax": data.get("nightsMax"),
         "hotelIsNotInStop": 1,
         "hasTickets": 0,
-        "priceMax": data.get("priceMax")
     }
+
+    if data.get("priceMin") is not None:
+        params["priceMin"] = data["priceMin"]
+
+    if data.get("priceMax") is not None:
+        params["priceMax"] = data["priceMax"]
 
     if data.get("resorts"):
         params["resorts"] = data["resorts"]

@@ -231,28 +231,40 @@ async def ask_price(message: Message, state: FSMContext):
 @router.callback_query(F.data.startswith("price_"))
 async def handle_price_selection(call: CallbackQuery, state: FSMContext):
     price_text = call.data.replace("price_", "")
-    price_value = 999999 if price_text == "3000+" else int(price_text)
-    # "💵 Максимальный бюджет: <b>{price_text} USD</b>\n 
-    # await call.message.edit_text(f"⌛ Мы подбираем для вас идеальный тур.\n При большой нагрузке поиск может занимать около 1 минут❣️")         
-    await state.update_data(priceMax=price_value)
+
+    # Определение диапазонов по кнопке
+    ranges = {
+        "2000": (1600, 2300),
+        "2500": (2300, 2800),
+        "3000": (2800, 3300),
+        "3500": (3300, 3800),
+        "4000": (3800, 999999),
+    }
+
+    if price_text not in ranges:
+        await call.message.answer("❗ Неизвестный диапазон цен.")
+        return
+
+    price_min, price_max = ranges[price_text]
+    await state.update_data(priceMin=price_min, priceMax=price_max)
+
     data = await state.get_data()
 
     summary = (
-    f"⌛ Мы подбираем для вас идеальный тур по вашим параметрам.\n При большой нагрузке поиск может занимать около 1 минут❣️\n"
-    f"✅ <b>Выбранные параметры:</b>\n"
-    f"🌍 Страна: {data.get('countryName', '—')}\n"
-    f"💥Город отправления: {data.get('departCityName', '—')}\n"
-    f"📅 Даты: {data.get('dateFrom')} – {data.get('dateTo')}\n"
-    f"🌙 Ночи: {data.get('nightsMin')}–{data.get('nightsMax')}\n"
-    f"👥 Взрослых: {data.get('adults')}, Детей: {data.get('kids')}\n"
-    f"💵 Бюджет: {price_text} USD\n\n"
-    f"⌛ Ищем туры, подождите..."
+        f"⌛ Мы подбираем для вас идеальный тур по вашим параметрам.\n"
+        f"При большой нагрузке поиск может занимать около 1 минуты❣️\n\n"
+        f"✅ <b>Выбранные параметры:</b>\n"
+        f"🌍 Страна: {data.get('countryName', '—')}\n"
+        f"💥 Город отправления: {data.get('departCityName', '—')}\n"
+        f"📅 Даты: {data.get('dateFrom')} – {data.get('dateTo')}\n"
+        f"🌙 Ночи: {data.get('nightsMin')}–{data.get('nightsMax')}\n"
+        f"👥 Взрослых: {data.get('adults')}, Детей: {data.get('kids')}\n"
+        f"💵 Бюджет: {price_min}–{price_max} USD\n\n"
+        f"⌛ Ищем туры, подождите..."
     )
-
     await call.message.edit_text(summary)
 
-
-    params = build_tour_params(data) # Параметры туров
+    params = build_tour_params(data)
 
     tours = await search_tours_to_file(params, output_file="all_tours.json")
 
@@ -263,17 +275,22 @@ async def handle_price_selection(call: CallbackQuery, state: FSMContext):
         markup = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="🔙 В главное меню", callback_data="exit_tours")]
         ])
-        await call.message.edit_text("🙁 Туров по заданным параметрам не найдено. Вернитесь в подбор туров и расширьте фильтр", reply_markup=markup)
+        await call.message.edit_text(
+            "🙁 Туров по заданным параметрам не найдено. Вернитесь в подбор туров и расширьте фильтр.",
+            reply_markup=markup
+        )
         await state.clear()
         return
 
     user_tour_results[call.from_user.id] = {"tours": tours, "index": 0}
     await state.set_state(TourSearchState.show_results)
     await send_tour_info(call.message, tours[0], 0, len(tours))
+
     try:
         await call.answer()
     except Exception as e:
         print(f"[ERROR] call.answer() failed: {e}")
+
 
 
 
