@@ -13,4 +13,5 @@ def hotel_category_keyboard():
         [InlineKeyboardButton(text=cat["name"], callback_data=f"hotelcat_{cat['id']}")]
         for cat in HOTEL_CATEGORIES
     ]
+    keyboard.append([InlineKeyboardButton(text="🔙 Главное меню", callback_data="exit_tours")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
