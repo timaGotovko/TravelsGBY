@@ -11,5 +11,6 @@ def generate_city_keyboard(country_id: int):
         [InlineKeyboardButton(text=city["name"], callback_data=f"resort_{city['id']}")]
         for city in cities
     ]
-    keyboard.append([InlineKeyboardButton(text="🏙 Город не важен", callback_data="resort_skip")])
+    # keyboard.append([InlineKeyboardButton(text="🏙 Город не важен", callback_data="resort_skip")])
+    keyboard.append([InlineKeyboardButton(text="🔙 Главное меню", callback_data="exit_tours")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
