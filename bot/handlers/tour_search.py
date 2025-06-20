@@ -23,10 +23,7 @@ user_tour_results = {}
 @router.callback_query(F.data == "tours")
 async def ask_departure_city(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text("🛫 Выберите город вылета:", reply_markup=departure_city_keyboard())
-    menu_msg = await call.message.answer("ℹ️ Или нажмите, чтобы вернуться в главное меню:", reply_markup=main_menu_button())
-    await state.update_data(prompt_id=call.msg.message_id, menu_id=menu_msg.message_id)
     await state.set_state(TourSearchState.departure_city)
-
 
 
 @router.callback_query(F.data.startswith("country_"))
@@ -69,7 +66,6 @@ async def handle_departure_city(call: CallbackQuery, state: FSMContext):
         keyboard = country_keyboard()
 
     await call.message.answer("🌍 Выберите страну по кнопке ниже:", reply_markup=keyboard)
-    await call.message.answer("ℹ️ Или нажмите, чтобы вернуться в главное меню:", reply_markup=main_menu_button())
     await state.set_state(TourSearchState.country)
 
     try:
@@ -227,7 +223,6 @@ async def ask_price(message: Message, state: FSMContext):
 
     # await message.answer(f"🧒 Детей: <b>{kids}</b>")
     msg = await message.answer("💵 Укажите максимальную сумму в долларах:", reply_markup=price_keyboard())
-    await message.answer("ℹ️ Или нажмите, чтобы вернуться в главное меню:", reply_markup=main_menu_button())
     await state.update_data(prompt_id=msg.message_id)
     await state.set_state(TourSearchState.priceMax)
 
@@ -283,7 +278,7 @@ async def handle_price_selection(call: CallbackQuery, state: FSMContext):
             "🙁 Туров по заданным параметрам не найдено. Вернитесь в подбор туров и расширьте фильтр.",
             reply_markup=markup
         )
-        await call.message.answer("ℹ️ Или нажмите, чтобы вернуться в главное меню:", reply_markup=main_menu_button())
+        await call.message.answer("Главное меню:", reply_markup=main_menu_button())
         await state.clear()
         return
 
@@ -405,7 +400,6 @@ async def handle_resort_selection(call: CallbackQuery, state: FSMContext):
 
     # Переход к выбору категории отеля
     await call.message.answer("🏨 Выберите категорию отеля:", reply_markup=hotel_category_keyboard())
-    await call.message.answer("ℹ️ Или нажмите, чтобы вернуться в главное меню:", reply_markup=main_menu_button())
     await state.set_state(TourSearchState.hotel_category)
 
 @router.callback_query(F.data.startswith("hotelcat_"))
