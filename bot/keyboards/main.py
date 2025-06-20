@@ -45,3 +45,7 @@ def main_keyboard():
         [InlineKeyboardButton(text="💬 Контакт менеджера", url="https://t.me/pln_iva")]
     ])
 
+def main_menu_button():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔙 В главное меню", callback_data="exit_tours")]
+    ])

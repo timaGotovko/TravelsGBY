@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 from aiogram.fsm.context import FSMContext
 from bot.states.tour_state import TourSearchState
 from bot.services.tour_api import search_tours_to_file
-from bot.keyboards.main import main_keyboard
+from bot.keyboards.main import main_keyboard, main_menu_button
 import re
 from datetime import datetime, date
 from bot.keyboards.main import country_keyboard, country_keyboard_for_Moskov
@@ -37,7 +37,7 @@ async def handle_country_selection(call: CallbackQuery, state: FSMContext):
         await call.message.delete()
     except Exception as e:
         print(f"[ERROR] Не удалось удалить сообщение: {e}")
-    msg = await call.message.answer("📅 Введите диапазон дат когда вы хотите вылететь в формате ДД.ММ.ГГГГ - ДД.ММ.ГГГГ:")
+    msg = await call.message.answer("📅 Введите диапазон дат когда вы хотите вылететь в формате ДД.ММ.ГГГГ - ДД.ММ.ГГГГ:", reply_markup=main_menu_button())
     await state.update_data(prompt_id=msg.message_id)
     await state.set_state(TourSearchState.date)
     try:
@@ -67,6 +67,7 @@ async def handle_departure_city(call: CallbackQuery, state: FSMContext):
         keyboard = country_keyboard()
 
     await call.message.answer("🌍 Выберите страну по кнопке ниже:", reply_markup=keyboard)
+    await call.message.answer("ℹ️ Или нажмите, чтобы вернуться в главное меню:", reply_markup=main_menu_button())
     await state.set_state(TourSearchState.country)
 
     try:
@@ -89,7 +90,7 @@ async def ask_nights_range(message: Message, state: FSMContext):
         except Exception as e:
             print(f"[ERROR] При удалении сообщений: {e}")
 
-        msg = await message.answer("❗ Неверный формат. Введите как: 22.06.2025 - 22.08.2025")
+        msg = await message.answer("❗ Неверный формат. Введите как: 22.06.2025 - 22.08.2025", reply_markup=main_menu_button())
         await state.update_data(prompt_id=msg.message_id)
         return
 
@@ -99,7 +100,7 @@ async def ask_nights_range(message: Message, state: FSMContext):
         date_from = datetime.strptime(date_from_str, "%d.%m.%Y").date()
         date_to = datetime.strptime(date_to_str, "%d.%m.%Y").date()
     except ValueError:
-        await message.answer("❗ Неверные даты. Проверьте формат.")
+        await message.answer("❗ Неверные даты. Проверьте формат.", reply_markup=main_menu_button())
         return
 
     # 🚫 Проверка на прошедшие даты
@@ -112,7 +113,7 @@ async def ask_nights_range(message: Message, state: FSMContext):
         except Exception as e:
             print(f"[ERROR] При удалении сообщений: {e}")
 
-        msg = await message.answer("❗ Дата начала поездки уже прошла. Введите актуальные даты.")
+        msg = await message.answer("❗ Дата начала поездки уже прошла. Введите актуальные даты.", reply_markup=main_menu_button())
         await state.update_data(prompt_id=msg.message_id)
         return
 
@@ -127,7 +128,7 @@ async def ask_nights_range(message: Message, state: FSMContext):
         print(f"[ERROR] call.answer() failed: {e}")
 
     # await message.answer(f"📅 Вы выбрали даты отправления: <b>{date_from_str}</b> – <b>{date_to_str}</b>")
-    msg = await message.answer("🏨 Введите диапазон ночей  (например, 7-12):")
+    msg = await message.answer("🏨 Введите диапазон ночей  (например, 7-12):", reply_markup=main_menu_button())
     await state.update_data(prompt_id=msg.message_id)
     await state.set_state(TourSearchState.nights)
 
@@ -144,7 +145,7 @@ async def ask_adults(message: Message, state: FSMContext):
         except Exception as e:
             print(f"[ERROR] При удалении сообщений: {e}")
 
-        msg = await message.answer("❗ Неверный формат. Введите как: 7-12")
+        msg = await message.answer("❗ Неверный формат. Введите как: 7-12", reply_markup=main_menu_button())
         await state.update_data(prompt_id=msg.message_id)
         return
 
@@ -159,7 +160,7 @@ async def ask_adults(message: Message, state: FSMContext):
         print(f"[ERROR] call.answer() failed: {e}")
 
     # await message.answer(f"🌙 Вы выбрали продолжительность: <b>{nights_min}–{nights_max}</b> ночей")
-    msg = await message.answer("👥 Укажите количество взрослых:")
+    msg = await message.answer("👥 Укажите количество взрослых:", reply_markup=main_menu_button())
     await state.update_data(prompt_id=msg.message_id)
     await state.set_state(TourSearchState.people)
 
@@ -178,7 +179,7 @@ async def ask_kids(message: Message, state: FSMContext):
         except Exception as e:
             print(f"[ERROR] При удалении сообщений: {e}")
 
-        msg = await message.answer("❗ Введите число.")
+        msg = await message.answer("❗ Введите число.", reply_markup=main_menu_button())
         await state.update_data(prompt_id=msg.message_id)
         return
 
@@ -191,7 +192,7 @@ async def ask_kids(message: Message, state: FSMContext):
         print(f"[ERROR] call.answer() failed: {e}")
 
     # await message.answer(f"👥 Взрослых: <b>{adults}</b>")
-    msg = await message.answer("🧒 Укажите количество детей (0, если нет):")
+    msg = await message.answer("🧒 Укажите количество детей (0, если нет):", reply_markup=main_menu_button())
     await state.update_data(prompt_id=msg.message_id)
     await state.set_state(TourSearchState.kids)
 
@@ -210,7 +211,7 @@ async def ask_price(message: Message, state: FSMContext):
         except Exception as e:
             print(f"[ERROR] При удалении сообщений: {e}")
 
-        msg = await message.answer("❗ Введите число.")
+        msg = await message.answer("❗ Введите число.", reply_markup=main_menu_button())
         await state.update_data(prompt_id=msg.message_id)
         return
 
@@ -224,6 +225,7 @@ async def ask_price(message: Message, state: FSMContext):
 
     # await message.answer(f"🧒 Детей: <b>{kids}</b>")
     msg = await message.answer("💵 Укажите максимальную сумму в долларах:", reply_markup=price_keyboard())
+    await message.answer("ℹ️ Или нажмите, чтобы вернуться в главное меню:", reply_markup=main_menu_button())
     await state.update_data(prompt_id=msg.message_id)
     await state.set_state(TourSearchState.priceMax)
 
@@ -242,7 +244,7 @@ async def handle_price_selection(call: CallbackQuery, state: FSMContext):
     }
 
     if price_text not in ranges:
-        await call.message.answer("❗ Неизвестный диапазон цен.")
+        await call.message.answer("❗ Неизвестный диапазон цен.", reply_markup=main_menu_button())
         return
 
     price_min, price_max = ranges[price_text]
@@ -279,6 +281,7 @@ async def handle_price_selection(call: CallbackQuery, state: FSMContext):
             "🙁 Туров по заданным параметрам не найдено. Вернитесь в подбор туров и расширьте фильтр.",
             reply_markup=markup
         )
+        await call.message.answer("ℹ️ Или нажмите, чтобы вернуться в главное меню:", reply_markup=main_menu_button())
         await state.clear()
         return
 
@@ -400,6 +403,7 @@ async def handle_resort_selection(call: CallbackQuery, state: FSMContext):
 
     # Переход к выбору категории отеля
     await call.message.answer("🏨 Выберите категорию отеля:", reply_markup=hotel_category_keyboard())
+    await call.message.answer("ℹ️ Или нажмите, чтобы вернуться в главное меню:", reply_markup=main_menu_button())
     await state.set_state(TourSearchState.hotel_category)
 
 @router.callback_query(F.data.startswith("hotelcat_"))
@@ -451,6 +455,7 @@ async def handle_hotel_category(call: CallbackQuery, state: FSMContext):
             [InlineKeyboardButton(text="🔙 В главное меню", callback_data="exit_tours")]
         ])
         await call.message.edit_text("🙁 Туров по заданным параметрам не найдено. Вернитесь в подбор туров и расширьте фильтр.", reply_markup=markup)
+        await call.message.answer("ℹ️ Или нажмите, чтобы вернуться в главное меню:", reply_markup=main_menu_button())
         await state.clear()
         return
 
