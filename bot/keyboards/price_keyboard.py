@@ -6,5 +6,7 @@ def price_keyboard():
         [InlineKeyboardButton(text="2500", callback_data="price_2500")],
         [InlineKeyboardButton(text="3000", callback_data="price_3000")],
         [InlineKeyboardButton(text="3500", callback_data="price_3500")],
-        [InlineKeyboardButton(text="4000", callback_data="price_4000")]
+        [InlineKeyboardButton(text="4000", callback_data="price_4000")],
+        [InlineKeyboardButton(text="🔙 Главное меню", callback_data="exit_tours")]
+        
     ])

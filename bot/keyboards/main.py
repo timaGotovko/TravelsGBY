@@ -14,6 +14,7 @@ def country_keyboard():
             row = []
     if row:
         keyboard.append(row)
+    keyboard.append([InlineKeyboardButton(text="🔙 Главное меню", callback_data="exit_tours")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
@@ -27,6 +28,7 @@ def country_keyboard_for_Moskov():
             row = []
     if row:
         keyboard.append(row)
+    keyboard.append([InlineKeyboardButton(text="🔙 Главное меню", callback_data="exit_tours")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
