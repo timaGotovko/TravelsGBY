@@ -9,4 +9,6 @@ def departure_city_keyboard():
         [InlineKeyboardButton(text=name, callback_data=f"dep_{id}")]
         for name, id in cities
     ]
+    buttons.append([InlineKeyboardButton(text="🔙 Главное меню", callback_data="exit_tours")])
+
     return InlineKeyboardMarkup(inline_keyboard=buttons)

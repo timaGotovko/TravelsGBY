@@ -23,6 +23,8 @@ user_tour_results = {}
 @router.callback_query(F.data == "tours")
 async def ask_departure_city(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text("🛫 Выберите город вылета:", reply_markup=departure_city_keyboard())
+    menu_msg = await call.message.answer("ℹ️ Или нажмите, чтобы вернуться в главное меню:", reply_markup=main_menu_button())
+    await state.update_data(prompt_id=call.msg.message_id, menu_id=menu_msg.message_id)
     await state.set_state(TourSearchState.departure_city)
 
 
